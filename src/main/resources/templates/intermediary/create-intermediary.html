@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Intermediario | RUI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .nav-tabs .nav-link.active { background-color: #3f51b5; color: white !important; }
+        .nav-tabs .nav-link { color: #3f51b5; }
+        .progress { height: 5px; margin-bottom: 20px; }
+        .tab-content { padding: 20px; }
+        .btn-primary { background-color: #3f51b5; border-color: #3f51b5; }
+        .btn-primary:hover { background-color: #303f9f; border-color: #303f9f; }
+        .btn-secondary { background-color: #f8f9fa; border-color: #ddd; color: #333; }
+        .btn-secondary:hover { background-color: #e9ecef; border-color: #ccc; color: #333; }
+        .table th { background-color: #f8f9fa; color: #333; font-weight: 500; }
+        .table td { vertical-align: middle; }
+        .btn-link { padding: 0.25rem 0.5rem; text-decoration: none; }
+        .btn-link:hover { background-color: #f8f9fa; border-radius: 4px; }
+        .form-check-input { margin: 0; }
+        .tipo-intermediario-section { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img th:src="@{/img/mintrabajo_logo.png}" height="35" alt="MinTrabajo">
+                <img th:src="@{/img/nuevopais_logo.png}" height="60" alt="Nuevo País">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
+                    aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav ms-auto">
+                    <!-- Dashboard (visible para todos) -->
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/dashboard}" th:classappend="${activeTab == 'dashboard' ? 'active fw-bold' : ''}">
+                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                        </a>
+                    </li>
+    
+                    <!-- Listado de Intermediarios (NO visible para Intermediario) -->
+                    <li class="nav-item" sec:authorize="!hasRole('ROLE_Intermediario')">
+                        <a class="nav-link" th:href="@{/intermediary/list}" th:classappend="${activeTab == 'intermediaryList' ? 'active fw-bold' : ''}">
+                            <i class="fas fa-list me-1"></i> Listado de Intermediarios
+                        </a>
+                    </li>
+                    
+                    <!-- Mis Registros (visible para todos) -->
+                    <li class="nav-item" sec:authorize="!hasRole('ROLE_Funcionario')">
+                        <a class="nav-link" th:href="@{/intermediary/my-registries}" th:classappend="${activeTab == 'myRegistries' ? 'active fw-bold' : ''}">
+                            <i class="fas fa-folder-open me-1"></i> Mis Registros
+                        </a>
+                    </li>
+                    
+                    <!-- Cerrar sesión (visible para todos) -->
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/logout}">
+                            <i class="fas fa-sign-out-alt me-1"></i> Cerrar sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h4>FORMULARIO ÚNICO DE CREACIÓN DE INTERMEDIARIOS DE SEGUROS EN EL RAMO DE RIESGOS LABORALES</h4>
+                </div>
+                <a th:href="@{/intermediary/my-registries}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Volver a Mis Registros
+                </a>
+            </div>
+            <div class="card-body">
+                <!-- Mensajes de alerta -->
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Error:</strong> <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>¡Éxito!</strong> <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    
+    <div th:if="${warning}" class="alert alert-warning alert-dismissible fade show" role="alert">
+        <strong>Advertencia:</strong> <span th:text="${warning}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <form th:action="@{/intermediary/create}" th:object="${intermediary}" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="intermediaryType" id="hiddenIntermediaryType">
+                    <!-- Sección para seleccionar tipo de intermediario -->
+                    <div class="tipo-intermediario-section">
+                        <h5 class="card-title mb-4">Seleccione el Tipo de Intermediario</h5>
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label">Tipo de Intermediario: *</label>
+                            <div class="col-sm-8">
+                                <select class="form-select" id="intermediaryTypeSelect" required onchange="updateHiddenType()">
+                                    <option value="">Seleccione...</option>
+                                    <option th:each="type : ${intermediaryTypes}" th:value="${type.id}" th:text="${type.value}"></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general">Información General</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#idoneidad">Idoneidad Profesional</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#human">Infraestructura Humana</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#operational">Infraestructura Operativa</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#digital">Firma Digitalizada</button></li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- Tab de Información General -->
+                        <div class="tab-pane fade show active" id="general">
+                            <div class="progress mb-4"><div class="progress-bar" style="width: 20%"></div></div>
+                            <h5 class="card-title">Información General</h5>
+                            
+                            <!-- Sección para empresas (no agentes) -->
+<div id="empresa-section">
+    <!-- NIT -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">NIT: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{companyId.nit}" maxlength="10" id="companyNit">
+        </div>
+    </div>
+    
+    <!-- Razón Social -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Razón Social: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{companyId.name}" maxlength="160" id="companyName">
+        </div>
+    </div>
+    
+    <!-- Departamento -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Departamento: *</label>
+        <div class="col-sm-8">
+            <select class="form-select required-field" th:field="*{companyId.departmentId.id}" id="departmentSelect" onchange="loadCities()">
+                <option value="">Seleccione...</option>
+                <option th:each="dept : ${departments}" th:value="${dept.id}" th:text="${dept.name}"></option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Ciudad -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Ciudad: *</label>
+        <div class="col-sm-8">
+            <select class="form-select required-field" th:field="*{companyId.cityId.id}" id="citySelect">
+                <option value="">Seleccione...</option>
+                <option th:each="city : ${cities}" th:value="${city.id}" th:text="${city.name}" 
+                        th:attr="data-department=${city.department != null ? city.department.id : ''}"></option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Dirección -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Dirección: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{companyId.address}" maxlength="50">
+        </div>
+    </div>
+    
+    <!-- Correo electrónico -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Correo electrónico: *</label>
+        <div class="col-sm-8">
+            <input type="email" class="form-control required-field" th:field="*{companyId.email}" maxlength="200">
+        </div>
+    </div>
+    
+    <!-- Teléfono Fijo -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Teléfono Fijo: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{companyId.phone}" maxlength="7">
+        </div>
+    </div>
+</div>
+
+<!-- Sección para agentes -->
+<div id="agente-section" style="display: none;">
+    <!-- Tipo de Documento -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Tipo de Documento: *</label>
+        <div class="col-sm-8">
+            <select class="form-select required-field" th:field="*{personId.documentType}" id="personDocumentType">
+                <option value="">Seleccione...</option>
+                <option th:each="docType : ${documentTypes}" th:value="${docType.id}" th:text="${docType.value}"></option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Número de Documento -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Número de Documento: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{personId.documentNumber}" maxlength="15" id="personDocumentNumber">
+        </div>
+    </div>
+    
+    <!-- Primer Nombre -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Primer Nombre: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{personId.firstName}" maxlength="25" id="personFirstName">
+        </div>
+    </div>
+    
+    <!-- Segundo Nombre -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Segundo Nombre:</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control" th:field="*{personId.secondName}" maxlength="25">
+        </div>
+    </div>
+    
+    <!-- Primer Apellido -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Primer Apellido: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{personId.firstSurname}" maxlength="25" id="personFirstSurname">
+        </div>
+    </div>
+    
+    <!-- Segundo Apellido -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Segundo Apellido:</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control" th:field="*{personId.secondSurname}" maxlength="25">
+        </div>
+    </div>
+    
+    <!-- Departamento -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Departamento: *</label>
+        <div class="col-sm-8">
+            <select class="form-select required-field" th:field="*{personId.departmentId.id}" id="personDepartmentSelect" onchange="loadPersonCities()">
+                <option value="">Seleccione...</option>
+                <option th:each="dept : ${departments}" th:value="${dept.id}" th:text="${dept.name}"></option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Ciudad -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Ciudad: *</label>
+        <div class="col-sm-8">
+            <select class="form-select required-field" th:field="*{personId.cityId.id}" id="personCitySelect">
+                <option value="">Seleccione...</option>
+                <option th:each="city : ${cities}" th:value="${city.id}" th:text="${city.name}"
+                        th:attr="data-department=${city.department != null ? city.department.id : ''}"></option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Dirección -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Dirección: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{personId.address}" maxlength="50">
+        </div>
+    </div>
+    
+    <!-- Correo electrónico -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Correo electrónico: *</label>
+        <div class="col-sm-8">
+            <input type="email" class="form-control required-field" th:field="*{personId.email}" maxlength="200">
+        </div>
+    </div>
+    
+    <!-- Teléfono Fijo -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Teléfono Fijo: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{personId.phone}" maxlength="7">
+        </div>
+    </div>
+    
+    <!-- Teléfono Móvil -->
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label">Teléfono Móvil: *</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control required-field" th:field="*{personId.cellphone}" maxlength="10">
+        </div>
+    </div>
+</div>
+                            
+<div class="d-flex justify-content-end mt-4">
+    <button class="btn btn-primary" type="button" onclick="cambiarTab('idoneidad')">Siguiente <i class="fas fa-arrow-right ms-2"></i></button>
+</div>
+                        </div>
+
+                        <!-- Tab de Idoneidad Profesional -->
+                        <div class="tab-pane fade" id="idoneidad">
+                            <div class="progress mb-4"><div class="progress-bar" style="width: 40%"></div></div>
+                            <h5>Datos de Idoneidad Profesional</h5>
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Para agregar datos de idoneidad profesional, primero debe guardar el intermediario.
+                                Después de crear el intermediario, podrá editar y agregar esta información.
+                            </div>
+                            <div class="d-flex justify-content-between mt-4">
+                                <button class="btn btn-secondary" type="button" onclick="cambiarTab('general')"><i class="fas fa-arrow-left me-2"></i>Atrás</button>
+                                <button class="btn btn-primary" type="button" onclick="cambiarTab('human')">Siguiente <i class="fas fa-arrow-right ms-2"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Tab de Infraestructura Humana -->
+                        <div class="tab-pane fade" id="human">
+                            <div class="progress mb-4"><div class="progress-bar" style="width: 60%"></div></div>
+                            <h5>Infraestructura Humana</h5>
+                            
+                            <div id="infrahumana-section">
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">Tipo de Documento: *</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-select" th:field="*{infrastructureHumanId.lawyerId.documentType}">
+                                            <option value="">Seleccione...</option>
+                                            <option th:each="docType : ${documentTypes}" th:value="${docType.id}" th:text="${docType.value}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">Número de Documento: *</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control" th:field="*{infrastructureHumanId.lawyerId.documentNumber}" maxlength="15">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">Primer Nombre: *</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control" th:field="*{infrastructureHumanId.lawyerId.firstName}" maxlength="25">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">Segundo Nombre:</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control" th:field="*{infrastructureHumanId.lawyerId.secondName}" maxlength="25">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">Primer Apellido: *</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control" th:field="*{infrastructureHumanId.lawyerId.firstSurname}" maxlength="25">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">Segundo Apellido:</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control" th:field="*{infrastructureHumanId.lawyerId.secondSurname}" maxlength="25">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Para agregar experiencias laborales, primero debe guardar el intermediario.
+                                Después de crear el intermediario, podrá editar y agregar esta información.
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button class="btn btn-secondary" type="button" onclick="cambiarTab('idoneidad')"><i class="fas fa-arrow-left me-2"></i>Atrás</button>
+                                <button class="btn btn-primary" type="button" onclick="cambiarTab('operational')">Siguiente <i class="fas fa-arrow-right ms-2"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Tab de Infraestructura Operativa -->
+                        <div class="tab-pane fade" id="operational">
+                            <div class="progress mb-4"><div class="progress-bar" style="width: 80%"></div></div>
+                            <h5>Infraestructura Operativa</h5>
+                            
+                            <!-- Soportes -->
+                            <div class="row mb-4">
+                                <label class="col-sm-4 col-form-label">Soporte Cámara de Comercio: *</label>
+                                <div class="col-sm-8">
+                                    <input type="file" class="form-control" name="ccFile" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-4">
+                                <label class="col-sm-4 col-form-label">Soporte Software: *</label>
+                                <div class="col-sm-8">
+                                    <input type="file" class="form-control" name="softFile" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-4">
+                                <label class="col-sm-4 col-form-label">Soporte Equipos: *</label>
+                                <div class="col-sm-8">
+                                    <input type="file" class="form-control" name="hardFile" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                            
+                            <!-- Campos de información -->
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label">Línea telefónica 1: *</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" th:field="*{infrastructureOperationalId.phone1}" maxlength="10">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label">Línea telefónica 2:</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" th:field="*{infrastructureOperationalId.phone2}" maxlength="10">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label">Línea telefónica 3:</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" th:field="*{infrastructureOperationalId.phone3}" maxlength="10">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label">Número del Fax:</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" th:field="*{infrastructureOperationalId.phoneFax}" maxlength="7">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label">Correo Electrónico: *</label>
+                                <div class="col-sm-8">
+                                    <input type="email" class="form-control" th:field="*{infrastructureOperationalId.email}" maxlength="200">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label">Dirección Oficina: *</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" th:field="*{infrastructureOperationalId.addressServiceOffice}" maxlength="50">
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button class="btn btn-secondary" type="button" onclick="cambiarTab('human')"><i class="fas fa-arrow-left me-2"></i>Atrás</button>
+                                <button class="btn btn-primary" type="button" onclick="cambiarTab('digital')">Siguiente <i class="fas fa-arrow-right ms-2"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Tab de Firma Digitalizada -->
+                        <div class="tab-pane fade" id="digital">
+                            <div class="progress mb-4"><div class="progress-bar" style="width: 100%"></div></div>
+                            <h5>Firma Digitalizada</h5>
+                            
+                            <div class="row mb-4">
+                                <label class="col-sm-3 col-form-label">Firma Digitalizada: *</label>
+                                <div class="col-sm-8">
+                                    <input type="file" class="form-control" name="signatureFile" accept=".jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button class="btn btn-secondary" type="button" onclick="cambiarTab('operational')"><i class="fas fa-arrow-left me-2"></i>Atrás</button>
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Crear Intermediario</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript para manejar la interfaz -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filtrar ciudades según departamento seleccionado
+            if (document.getElementById('departmentSelect')) {
+                document.getElementById('departmentSelect').addEventListener('change', function() {
+                    loadCities();
+                });
+            }
+            
+            if (document.getElementById('personDepartmentSelect')) {
+                document.getElementById('personDepartmentSelect').addEventListener('change', function() {
+                    loadPersonCities();
+                });
+            }
+            
+            // Configuración inicial
+            toggleIntermediaryType();
+        });
+        
+        // Función para cambiar tabs
+        function cambiarTab(tabId) {
+            const tabElem = document.querySelector(`[data-bs-target="#${tabId}"]`);
+            if (tabElem) {
+                const tab = new bootstrap.Tab(tabElem);
+                tab.show();
+            }
+        }
+        
+        // Función para cargar ciudades según departamento (para empresa)
+        function loadCities() {
+            const departmentSelect = document.getElementById('departmentSelect');
+            const citySelect = document.getElementById('citySelect');
+            
+            if (!departmentSelect || !citySelect) return;
+            
+            const selectedDeptId = departmentSelect.value;
+            const cityOptions = citySelect.querySelectorAll('option');
+            
+            // Ocultar todas las ciudades
+            for (let i = 0; i < cityOptions.length; i++) {
+                const cityOption = cityOptions[i];
+                if (cityOption.value === '') {
+                    cityOption.style.display = '';
+                    continue;
+                }
+                
+                const deptId = cityOption.getAttribute('data-department');
+                if (deptId === selectedDeptId) {
+                    cityOption.style.display = '';
+                } else {
+                    cityOption.style.display = 'none';
+                }
+            }
+            
+            // Resetear la selección
+            citySelect.value = '';
+        }
+        
+        // Función para cargar ciudades según departamento (para persona)
+        function loadPersonCities() {
+            const departmentSelect = document.getElementById('personDepartmentSelect');
+            const citySelect = document.getElementById('personCitySelect');
+            
+            if (!departmentSelect || !citySelect) return;
+            
+            const selectedDeptId = departmentSelect.value;
+            const cityOptions = citySelect.querySelectorAll('option');
+            
+            // Ocultar todas las ciudades
+            for (let i = 0; i < cityOptions.length; i++) {
+                const cityOption = cityOptions[i];
+                if (cityOption.value === '') {
+                    cityOption.style.display = '';
+                    continue;
+                }
+                
+                const deptId = cityOption.getAttribute('data-department');
+                if (deptId === selectedDeptId) {
+                    cityOption.style.display = '';
+                } else {
+                    cityOption.style.display = 'none';
+                }
+            }
+            
+            // Resetear la selección
+            citySelect.value = '';
+        }
+        
+        // Función para mostrar/ocultar secciones según tipo de intermediario
+        function toggleIntermediaryType() {
+            const selectElement = document.getElementById('intermediaryTypeSelect');
+            const empresaSection = document.getElementById('empresa-section');
+            const agenteSection = document.getElementById('agente-section');
+            const infraHumanaSection = document.getElementById('infrahumana-section');
+            
+            if (!selectElement || !empresaSection || !agenteSection) return;
+            
+            const selectedValue = selectElement.value;
+            
+            // Valor 4 es para "Agente" (según lo indicado en el controlador)
+            if (selectedValue === '4') {
+                empresaSection.style.display = 'none';
+                agenteSection.style.display = 'block';
+                
+                // Si es agente individual, no se necesita la infraestructura humana
+                if (infraHumanaSection) {
+                    infraHumanaSection.style.display = 'none';
+                }
+            } else if (selectedValue) {
+                empresaSection.style.display = 'block';
+                agenteSection.style.display = 'none';
+                
+                // Para otros tipos (empresa), mostrar infraestructura humana
+                if (infraHumanaSection) {
+                    infraHumanaSection.style.display = 'block';
+                }
+            } else {
+                // Si no hay selección, mostrar empresa por defecto
+                empresaSection.style.display = 'block';
+                agenteSection.style.display = 'none';
+                
+                if (infraHumanaSection) {
+                    infraHumanaSection.style.display = 'block';
+                }
+            }
+        }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar campos requeridos según tipo seleccionado
+            updateRequiredFields();
+            
+            // Agregar evento para actualizar campos requeridos cuando cambia el tipo
+            document.getElementById('intermediaryTypeSelect').addEventListener('change', function() {
+                updateRequiredFields();
+            });
+            
+            // Al enviar el formulario, validar según tipo seleccionado
+            document.querySelector('form').addEventListener('submit', function(event) {
+                if (!validateForm()) {
+                    event.preventDefault();
+                    alert('Por favor complete todos los campos obligatorios.');
+                }
+            });
+        });
+        
+        // Función para actualizar campos requeridos según tipo
+        function updateRequiredFields() {
+            const selectElement = document.getElementById('intermediaryTypeSelect');
+            const isAgente = selectElement.value === '4'; // Asumiendo que 4 es el ID para "Agente"
+            
+            // Campos de empresa
+            const empresaFields = document.querySelectorAll('#empresa-section input, #empresa-section select');
+            // Campos de agente
+            const agenteFields = document.querySelectorAll('#agente-section input, #agente-section select');
+            
+            // Actualizar atributos required según tipo
+            empresaFields.forEach(field => {
+                if (field.classList.contains('required-field')) {
+                    field.required = !isAgente;
+                }
+            });
+            
+            agenteFields.forEach(field => {
+                if (field.classList.contains('required-field')) {
+                    field.required = isAgente;
+                }
+            });
+            
+            // Actualizar visualización según tipo
+            toggleIntermediaryType();
+        }
+        
+        // Función para validar formulario antes de enviar
+        function validateForm() {
+            const selectElement = document.getElementById('intermediaryTypeSelect');
+            if (!selectElement.value) {
+                return false; // Debe seleccionar un tipo
+            }
+            
+            const isAgente = selectElement.value === '4';
+            
+            if (isAgente) {
+                // Validar campos de agente
+                const documentType = document.getElementById('personDocumentType');
+                const documentNumber = document.getElementById('personDocumentNumber');
+                const firstName = document.getElementById('personFirstName');
+                const firstSurname = document.getElementById('personFirstSurname');
+                
+                return documentType.value && documentNumber.value && firstName.value && firstSurname.value;
+            } else {
+                // Validar campos de empresa
+                const nit = document.getElementById('companyNit');
+                const name = document.getElementById('companyName');
+                
+                return nit.value && name.value;
+            }
+        }
+    </script>
+
+<script>
+    function updateHiddenType() {
+        const select = document.getElementById('intermediaryTypeSelect');
+        const hidden = document.getElementById('hiddenIntermediaryType');
+        hidden.value = select.value;
+        
+        // Mostrar u ocultar secciones según el tipo
+        const isAgente = select.value === '4'; // Asumiendo que 4 es el ID para "Agente"
+        
+        // Mostrar/ocultar campos según tipo
+        document.getElementById('empresa-section').style.display = isAgente ? 'none' : 'block';
+        document.getElementById('agente-section').style.display = isAgente ? 'block' : 'none';
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        updateHiddenType();
+    });
+</script>
+</body>
+</html>
