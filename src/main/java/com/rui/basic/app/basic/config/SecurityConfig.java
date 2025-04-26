@@ -80,6 +80,9 @@ public class SecurityConfig {
                 // Cualquier otra solicitud requiere autenticación
                 .anyRequest().authenticated()
             )
+            .headers(headers -> headers
+                .frameOptions(frameOptions -> frameOptions.sameOrigin())
+            )
             .formLogin(form -> form
                 .loginPage("/auth/login")
                 .loginProcessingUrl("/auth/login")

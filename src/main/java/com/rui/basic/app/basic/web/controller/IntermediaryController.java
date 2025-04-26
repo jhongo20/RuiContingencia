@@ -28,6 +28,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -889,10 +890,13 @@ public class IntermediaryController {
                     }
                 }
             }
-
+            log.info("estoy ubicado antes de ingresar al infrahumano", null, null);
             // 3. Actualizar Infraestructura Humana
             RuiInfraHuman infraHuman = existingIntermediary.getInfrastructureHumanId();
+            log.info("infraHuman: {}", infraHuman);
+            log.info("intermediary.getInfrastructureHumanId(): {}", intermediary.getInfrastructureHumanId());
             if (infraHuman != null && intermediary.getInfrastructureHumanId() != null) {
+                log.info("estoy ubicado dentro de la estructura de infrahumano", null, null);
                 RuiPerson lawyer = infraHuman.getLawyerId();
                 if (lawyer != null) {
                     lawyer.setDocumentType(intermediary.getInfrastructureHumanId().getLawyerId().getDocumentType());
@@ -929,10 +933,24 @@ public class IntermediaryController {
                         }
                         workExperienceRepository.save(exp);
 
+                        log.info("estoy ubicado antes de Multiparte de archivos", null, null);
                         MultipartFile workExperienceFile = request.getFile("workExperienceFiles[" + index + "]");
                         if (workExperienceFile != null && !workExperienceFile.isEmpty()) {
+
+                            log.debug("Procesando archivo: {} con tamaño: {} bytes", 
+        workExperienceFile.getOriginalFilename(), 
+        workExperienceFile.getSize());
+        log.debug("Directorio destino: {}", 
+        Paths.get(attachmentsDir).resolve(currentUserId.toString())
+            .resolve(id.toString()).resolve("INFRA_HUMANA/" + exp.getId()));
+
+            // Comprobar si el directorio base existe
+    Paths.get(attachmentsDir);
+    log.debug("¿Directorio base '{}' existe? {}", 
+    Paths.get(attachmentsDir), Files.exists(Paths.get(attachmentsDir)));
+
                             String filePath = fileStorageService.storeFile(workExperienceFile,
-                                    "WORK_EXPERIENCE/" + exp.getId(), currentUserId, id, Paths.get(attachmentsDir));
+                                    "INFRA_HUMANA/" + exp.getId(), currentUserId, id, Paths.get(attachmentsDir));
                             ruiSupportRepository.findFirstByWorkExperienceId(exp).ifPresent(support -> {
                                 support.setStatus((short) 0);
                                 ruiSupportRepository.save(support);
